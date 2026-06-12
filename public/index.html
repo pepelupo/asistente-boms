@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Asistente para BOMs</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <section class="topbar">
+      <div>
+        <p class="eyebrow">Bessel</p>
+        <h1>Asistente para BOMs</h1>
+      </div>
+      <div class="top-actions">
+        <button class="button secondary nav-button active" id="workViewButton" type="button">Trabajo</button>
+        <button class="button secondary nav-button" id="configViewButton" type="button">Configuracion y estado</button>
+        <a class="button secondary" href="/api/auth/zoho/start">Conectar Zoho</a>
+        <button class="button secondary" id="logoutButton" type="button">Salir</button>
+      </div>
+    </section>
+
+    <section class="app-page" id="workPage">
+    <section class="grid setup-grid">
+      <article class="panel">
+        <h2>Nueva cotizacion</h2>
+        <label for="quoteUrl">Link del presupuesto Zoho</label>
+        <input id="quoteUrl" type="url" placeholder="https://crm.zoho.com/crm/.../Quotes/..." />
+        <button class="button" id="readQuoteButton" type="button">Leer presupuesto</button>
+        <p class="muted" id="quoteHint">Pega un link de presupuesto de prueba de Zoho para leer sus datos.</p>
+      </article>
+    </section>
+
+    <section class="workbench">
+      <aside class="panel bom-data-panel">
+        <div class="section-header">
+          <h2>Datos para la BOM</h2>
+          <button class="icon-button collapse-toggle" id="bomDataToggle" type="button" aria-label="Contraer datos para la BOM" aria-expanded="true">
+            <span aria-hidden="true"></span>
+          </button>
+        </div>
+
+        <form id="bomDataForm" class="bom-form">
+          <h3>Items principales</h3>
+          <div class="bom-items-list" id="bomItemsList"></div>
+          <label for="itemMargin">Margen divisor</label>
+          <input id="itemMargin" data-field="items.marginDivisor" type="number" step="any" />
+
+          <h3>Mano de obra</h3>
+          <label for="laborApplies">Aplica</label>
+          <select id="laborApplies" data-field="labor.applies">
+            <option value="">Pendiente</option>
+            <option value="true">Si</option>
+            <option value="false">No</option>
+          </select>
+          <div class="form-grid">
+            <div>
+              <label for="laborHours">Horas</label>
+              <input id="laborHours" data-field="labor.hours" type="number" step="any" />
+            </div>
+            <div>
+              <label for="insuranceValue">Valor equipo intervenido USD</label>
+              <input id="insuranceValue" data-field="insurance.insuredValueUsd" type="number" step="any" />
+            </div>
+          </div>
+          <label for="laborWorkType">Tipo de trabajo</label>
+          <input id="laborWorkType" data-field="labor.workType" type="text" />
+          <h3>Materiales y logistica</h3>
+          <label for="materialsExtras">Materiales extra</label>
+          <select id="materialsExtras" data-field="materials.hasExtras">
+            <option value="">Pendiente</option>
+            <option value="true">Si</option>
+            <option value="false">No</option>
+          </select>
+          <label for="materialsDetail">Detalle materiales</label>
+          <input id="materialsDetail" data-field="materials.detail" type="text" />
+          <label for="materialsCost">Costo materiales USD</label>
+          <input id="materialsCost" data-field="materials.cost" type="number" step="any" />
+          <label for="logisticsApplies">Logistica</label>
+          <select id="logisticsApplies" data-field="logistics.applies">
+            <option value="">Pendiente</option>
+            <option value="true">Si</option>
+            <option value="false">No</option>
+          </select>
+          <div class="form-grid">
+            <div>
+              <label for="logisticsKm">Km</label>
+              <input id="logisticsKm" data-field="logistics.km" type="number" step="any" />
+            </div>
+            <div>
+              <label for="insuranceType">Seguro</label>
+              <select id="insuranceType" data-field="insurance.type">
+                <option value="instalacion_nueva">Instalacion nueva</option>
+                <option value="intervencion_equipo_cliente">Intervencion</option>
+              </select>
+            </div>
+          </div>
+          <label for="logisticsDestination">Destino o zona</label>
+          <input id="logisticsDestination" data-field="logistics.destination" type="text" />
+
+          <h3>Parametros de costos</h3>
+          <label for="laborHourlyRate">Mano de obra - valor hora ARS</label>
+          <input id="laborHourlyRate" data-field="labor.hourlyRateArs" type="number" step="any" />
+          <label for="insuranceRate">Seguro - tasa aplicada</label>
+          <input id="insuranceRate" data-field="insurance.rate" type="number" step="any" readonly />
+          <div class="form-grid">
+            <div>
+              <label for="logisticsRate">Viaticos - USD/km</label>
+              <input id="logisticsRate" data-field="logistics.rateUsdPerKm" type="number" step="any" />
+            </div>
+            <div>
+              <label for="logisticsParking">Viaticos - estacionamiento USD</label>
+              <input id="logisticsParking" data-field="logistics.parkingUsd" type="number" step="any" />
+            </div>
+          </div>
+          <div class="form-grid">
+            <div>
+              <label for="exchangeBillSale">TC billete venta</label>
+              <input id="exchangeBillSale" data-field="exchange.billSale" type="number" step="any" />
+            </div>
+            <div>
+              <label for="exchangeCurrencySale">TC divisa venta</label>
+              <input id="exchangeCurrencySale" data-field="exchange.currencySale" type="number" step="any" />
+            </div>
+          </div>
+
+          <button class="button full" id="saveBomDataButton" type="submit">Guardar cambios</button>
+          <p class="muted small" id="bomDataStatus">Sin presupuesto cargado.</p>
+        </form>
+      </aside>
+
+      <section class="panel chat-panel">
+        <h2>Chat</h2>
+        <div class="chat-window" id="chatWindow">
+          <div class="message assistant">Hola. Primero conectemos Zoho; despues voy a poder leer presupuestos falsos de prueba y ayudarte a armar el BOM.</div>
+        </div>
+        <div class="composer">
+          <input id="chatInput" type="text" placeholder="Escribi un mensaje para el agente" />
+          <button class="button" id="sendButton" type="button">Enviar</button>
+        </div>
+      </section>
+    </section>
+
+    <section class="panel">
+      <div class="section-header">
+        <h2>BOM generado</h2>
+        <div class="button-row">
+          <button class="button compact secondary" id="showStateButton" type="button">Ver datos guardados</button>
+          <button class="button compact" id="generateBomButton" type="button">Generar BOM</button>
+          <a class="button compact secondary" href="/api/bom/xlsx" download>Descargar Sheets</a>
+          <button class="button compact" id="attachBomButton" type="button">Subir BOM a Zoho</button>
+        </div>
+      </div>
+      <pre class="quote-output" id="bomOutput">Cuando tengas datos cargados en el chat, genera una vista previa de la BOM.</pre>
+    </section>
+
+    <section class="panel">
+      <h2>Presupuesto leido</h2>
+      <pre class="quote-output" id="quoteOutput">Todavia no hay presupuesto cargado.</pre>
+    </section>
+    </section>
+
+    <section class="app-page hidden" id="configPage">
+      <section class="grid setup-grid">
+        <article class="panel">
+          <h2>Estado del prototipo</h2>
+          <div id="status" class="status-list">
+            <p>Cargando estado...</p>
+          </div>
+        </article>
+      </section>
+
+      <section class="panel quote-create-panel">
+        <h2>Crear presupuesto</h2>
+        <label for="newQuoteSubject">Asunto del presupuesto</label>
+        <input id="newQuoteSubject" type="text" placeholder="Ej: PRUEBA BOM - cliente" />
+
+        <div class="finder-block">
+          <label for="accountSearch">Cuenta / cliente</label>
+          <div class="inline-action">
+            <input id="accountSearch" type="text" placeholder="Buscar cliente en Zoho" />
+            <button class="button compact secondary" id="searchAccountButton" type="button">Buscar</button>
+          </div>
+          <div class="finder-results" id="accountResults"></div>
+          <div class="inline-action">
+            <input id="newAccountName" type="text" placeholder="Crear cliente si no existe" />
+            <button class="button compact secondary" id="createAccountButton" type="button">Crear cliente</button>
+          </div>
+        </div>
+
+        <div class="finder-block">
+          <label for="contactSearch">Contacto</label>
+          <div class="inline-action">
+            <input id="contactSearch" type="text" placeholder="Buscar por nombre o email" />
+            <button class="button compact secondary" id="searchContactButton" type="button">Buscar</button>
+          </div>
+          <div class="finder-results" id="contactResults"></div>
+          <div class="form-grid">
+            <input id="newContactFirstName" type="text" placeholder="Nombre" />
+            <input id="newContactLastName" type="text" placeholder="Apellido" />
+          </div>
+          <div class="inline-action">
+            <input id="newContactEmail" type="email" placeholder="Email" />
+            <button class="button compact secondary" id="createContactButton" type="button">Crear contacto</button>
+          </div>
+        </div>
+
+        <div class="finder-block">
+          <label for="productSearch">Producto inicial</label>
+          <div class="inline-action">
+            <input id="productSearch" type="text" placeholder="Buscar producto en Zoho" />
+            <button class="button compact secondary" id="searchProductButton" type="button">Buscar</button>
+          </div>
+          <div class="finder-results" id="productResults"></div>
+          <div class="form-grid">
+            <input id="newQuoteQuantity" type="number" step="any" min="1" value="1" placeholder="Cantidad" />
+            <input id="newQuoteListPrice" type="number" step="any" min="0" value="0" placeholder="Precio lista" />
+          </div>
+        </div>
+
+        <button class="button full" id="createQuoteButton" type="button">Crear presupuesto en Zoho</button>
+        <p class="muted small" id="createQuoteStatus">Selecciona cliente, contacto y producto para crear el presupuesto.</p>
+      </section>
+
+      <section class="panel admin-panel hidden" id="adminPanel">
+        <div class="section-header">
+          <h2>Administracion del bot</h2>
+          <button class="button compact secondary" id="refreshPromptButton" type="button">Actualizar prompt</button>
+        </div>
+
+        <div class="admin-grid">
+          <div class="admin-column">
+            <label for="adminPromptView">Prompt actual efectivo</label>
+            <textarea id="adminPromptView" class="admin-textarea prompt-view"></textarea>
+            <button class="button" id="saveAdminPromptButton" type="button">Guardar prompt</button>
+
+            <label for="adminContextFile">Subir archivo de contexto</label>
+            <input id="adminContextFile" type="file" accept=".txt,.md,.csv,.json,.docx,text/*,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+            <button class="button secondary" id="uploadAdminFileButton" type="button">Subir archivo al prompt</button>
+            <p class="muted small" id="adminStatus">Solo visible para administradores.</p>
+            <div class="admin-file-list" id="adminFileList"></div>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,255 @@
+openapi: 3.0.0
+info:
+  title: Bessel BOM Tools
+  version: "1.0.0"
+  description: Custom tools for the Bessel BOM assistant. These tools read Zoho CRM quotes/products, generate BOM files, attach them to quotes, and update allowed quote fields.
+servers:
+  - url: https://asistente-boms.bessel.com.ar
+security:
+  - ZiaToolBearer: []
+paths:
+  /api/zia/tools/ping:
+    get:
+      operationId: pingBesselBomTools
+      summary: Check that the Bessel BOM tools API is reachable.
+      responses:
+        "200":
+          description: Tool API is reachable.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PingResponse"
+  /api/zia/quote/read:
+    post:
+      operationId: readZohoQuoteForBom
+      summary: Read a Zoho CRM quote and return the normalized BOM-relevant data.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [quoteId]
+              properties:
+                quoteId:
+                  type: string
+                  description: Zoho CRM quote ID.
+                includeRaw:
+                  type: boolean
+                  description: Include raw Zoho record for debugging.
+      responses:
+        "200":
+          description: Quote data.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteReadResponse"
+  /api/zia/products/search:
+    post:
+      operationId: searchZohoProductsForBom
+      summary: Search Zoho CRM products by name, code, model, price, stock, or cost.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query]
+              properties:
+                query:
+                  type: string
+                  description: Product name, code, model, or search words.
+      responses:
+        "200":
+          description: Matching products.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductSearchResponse"
+  /api/zia/exchange/read:
+    get:
+      operationId: readBnaExchangeForBom
+      summary: Read BNA exchange rates used by the BOM.
+      responses:
+        "200":
+          description: Exchange rate data.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExchangeResponse"
+  /api/zia/quote/update:
+    post:
+      operationId: updateZohoQuoteFieldsForBom
+      summary: Update allowed fields on a Zoho CRM quote.
+      description: Only a restricted set of quote fields is accepted by the backend.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [quoteId, fields]
+              properties:
+                quoteId:
+                  type: string
+                  description: Zoho CRM quote ID.
+                fields:
+                  type: object
+                  description: Allowed fields include Costos, Description, Terms_and_Conditions, Quote_Stage, Valid_Till, and Subject.
+                  additionalProperties: true
+      responses:
+        "200":
+          description: Updated quote.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteUpdateResponse"
+  /api/zia/bom/generate-and-attach:
+    post:
+      operationId: generateAndAttachBomToZohoQuote
+      summary: Generate the formatted BOM XLSX, attach it to a Zoho CRM quote, and set Costos to adjunto.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [quoteId]
+              properties:
+                quoteId:
+                  type: string
+                  description: Zoho CRM quote ID.
+                filename:
+                  type: string
+                  description: Optional filename without extension.
+                bomState:
+                  $ref: "#/components/schemas/BomState"
+      responses:
+        "200":
+          description: Generated and attached BOM result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateAttachResponse"
+components:
+  securitySchemes:
+    ZiaToolBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: token
+  schemas:
+    PingResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        service:
+          type: string
+        time:
+          type: string
+    QuoteReadResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        quote:
+          $ref: "#/components/schemas/QuoteSummary"
+    QuoteSummary:
+      type: object
+      additionalProperties: true
+      properties:
+        id:
+          type: string
+        subject:
+          type: string
+        quoteNumber:
+          type: string
+        accountName:
+          type: string
+        contactName:
+          type: string
+        status:
+          type: string
+        costs:
+          type: string
+        currency:
+          type: string
+        grandTotal:
+          type: number
+        validTill:
+          type: string
+        productDetails:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+    ProductSearchResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        query:
+          type: string
+        products:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+    ExchangeResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        exchange:
+          type: object
+          additionalProperties: true
+    QuoteUpdateResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        quoteId:
+          type: string
+        updatedFields:
+          type: object
+          additionalProperties: true
+        quote:
+          $ref: "#/components/schemas/QuoteSummary"
+    BomState:
+      type: object
+      additionalProperties: true
+      properties:
+        items:
+          type: object
+          additionalProperties: true
+        labor:
+          type: object
+          additionalProperties: true
+        insurance:
+          type: object
+          additionalProperties: true
+        materials:
+          type: object
+          additionalProperties: true
+        logistics:
+          type: object
+          additionalProperties: true
+        exchange:
+          type: object
+          additionalProperties: true
+    GenerateAttachResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        quoteId:
+          type: string
+        filename:
+          type: string
+        totals:
+          type: object
+          additionalProperties: true
+        quote:
+          $ref: "#/components/schemas/QuoteSummary"
+        costsUpdated:
+          type: boolean

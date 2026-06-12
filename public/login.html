@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ingresar - Asistente para BOMs</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="login-shell">
+    <section class="panel login-panel">
+      <p class="eyebrow">Bessel</p>
+      <h1>Asistente para BOMs</h1>
+      <form id="loginForm" class="login-form">
+        <label for="loginUser">Usuario o email</label>
+        <input id="loginUser" name="username" type="text" autocomplete="username" required>
+
+        <label for="loginPassword">Contraseña</label>
+        <input id="loginPassword" name="password" type="password" autocomplete="current-password" required>
+
+        <button class="button full" type="submit">Ingresar</button>
+        <p class="muted small" id="loginStatus"></p>
+      </form>
+    </section>
+  </main>
+  <script src="/login.js"></script>
+</body>
+</html>
