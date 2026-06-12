@@ -1,0 +1,24 @@
+{
+  "users": [
+    {
+      "username": "ignacio.vidalbruni@bessel.com.ar",
+      "name": "Juan Ignacio Vidal Bruni",
+      "email": "ignacio.vidalbruni@bessel.com.ar",
+      "role": "administrador",
+      "passwordSalt": "fa6a298dce20ff53977d2043ca555b27",
+      "passwordIterations": 310000,
+      "passwordHash": "d07d52025f6d627edacbfe118dade28b83a9330ba7f2e5adcd934b17033b6e86",
+      "createdAt": "2026-06-10T18:36:15.490Z"
+    },
+    {
+      "username": "german.planes@bessel.com.ar",
+      "name": "German Planes",
+      "email": "german.planes@bessel.com.ar",
+      "role": "comercial",
+      "passwordSalt": "bf55b1dfb0a60e72cc465bdd541e5dc7",
+      "passwordIterations": 310000,
+      "passwordHash": "f37ccd9a3aff123f5d47c75d99b719930f295509f77a476bd70561aa7d1842f6",
+      "createdAt": "2026-06-10T18:36:15.569Z"
+    }
+  ]
+}

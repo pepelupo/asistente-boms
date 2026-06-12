@@ -1,0 +1,162 @@
+{
+  "savedAt": "2026-06-10T18:41:31.744Z",
+  "quote": {
+    "id": "1582722000162624001",
+    "subject": "PRUEBA 3, NO FACTURAR",
+    "quoteNumber": "1582722000162624003",
+    "accountName": "Juan Ignacio Vidal Bruni",
+    "contactName": "Juan Ignacio Bruni",
+    "status": "1- Bosquejo",
+    "costs": "adjunto",
+    "currency": "USD",
+    "grandTotal": 8671.91,
+    "validTill": "2026-06-07",
+    "productDetails": [
+      {
+        "lineId": "1582722000162624002",
+        "sequence": "1",
+        "productId": "1582722000031830202",
+        "productName": "TROJAN T-105 AES AGM",
+        "productCode": "",
+        "description": "Batería marca TROJAN libre mantenimiento modelo T-105 AES. Tecnología AGM. Tensión: 6V. Amperaje: 207Ah. Dimensiones: 262x181x283. Peso: 31 kg.\nDEEP CYCLE AGM BATTERIES WHIT Smart Carbon tm – 3000 CYCLES @ 50% DOD",
+        "quantity": 1,
+        "listPrice": 104,
+        "total": 104,
+        "netTotal": 125.84,
+        "discount": 0,
+        "tax": 21.84,
+        "productUnitPrice": 0,
+        "productStock": 0,
+        "productQtyOrdered": 0
+      },
+      {
+        "lineId": "1582722000162899001",
+        "sequence": "2",
+        "productId": "1582722000031979915",
+        "productName": "SRT3000XLI",
+        "productCode": "",
+        "description": "UPS APC SRT3000XLI 3000VA/2700W.",
+        "quantity": 3,
+        "listPrice": 2578,
+        "total": 7734,
+        "netTotal": 8546.07,
+        "discount": 0,
+        "tax": 812.07,
+        "productUnitPrice": 0,
+        "productStock": 0,
+        "productQtyOrdered": 0
+      }
+    ]
+  },
+  "bomState": {
+    "readyForBom": false,
+    "items": {
+      "productName": "TROJAN T-105 AES AGM",
+      "quantity": 1,
+      "quoteLines": [
+        {
+          "lineId": "1582722000162624002",
+          "sequence": "1",
+          "productId": "1582722000031830202",
+          "productName": "TROJAN T-105 AES AGM",
+          "productCode": "",
+          "description": "Batería marca TROJAN libre mantenimiento modelo T-105 AES. Tecnología AGM. Tensión: 6V. Amperaje: 207Ah. Dimensiones: 262x181x283. Peso: 31 kg.\nDEEP CYCLE AGM BATTERIES WHIT Smart Carbon tm – 3000 CYCLES @ 50% DOD",
+          "quantity": 1,
+          "listPrice": 104,
+          "total": 104,
+          "netTotal": 125.84,
+          "discount": 0,
+          "tax": 21.84,
+          "productUnitPrice": 0,
+          "productStock": 0,
+          "productQtyOrdered": 0
+        },
+        {
+          "lineId": "1582722000162899001",
+          "sequence": "2",
+          "productId": "1582722000031979915",
+          "productName": "SRT3000XLI",
+          "productCode": "",
+          "description": "UPS APC SRT3000XLI 3000VA/2700W.",
+          "quantity": 3,
+          "listPrice": 2578,
+          "total": 7734,
+          "netTotal": 8546.07,
+          "discount": 0,
+          "tax": 812.07,
+          "productUnitPrice": 0,
+          "productStock": 0,
+          "productQtyOrdered": 0
+        }
+      ],
+      "costUnitUsd": null,
+      "provider": "",
+      "paymentCondition": "",
+      "marginDivisor": null,
+      "observations": "",
+      "confirmed": false,
+      "costLocked": false,
+      "marginLocked": false
+    },
+    "labor": {
+      "applies": null,
+      "hours": null,
+      "workType": "",
+      "hourlyRateArs": 20000
+    },
+    "admin": {
+      "managementDocumentationHours": null
+    },
+    "insurance": {
+      "applies": true,
+      "type": "instalacion_nueva",
+      "insuredValueUsd": null,
+      "rate": 0.01,
+      "confirmed": false
+    },
+    "materials": {
+      "hasExtras": null,
+      "detail": "",
+      "cost": null
+    },
+    "logistics": {
+      "applies": null,
+      "km": null,
+      "destination": "",
+      "rateUsdPerKm": 0.71,
+      "parkingUsd": 20
+    },
+    "exchange": {
+      "billSale": null,
+      "currencySale": null
+    }
+  },
+  "conversationProgress": {
+    "items": {
+      "costMentioned": false,
+      "marginMentioned": false,
+      "likelyClosed": false
+    },
+    "service": {
+      "explicitlyDenied": false,
+      "explicitlyConfirmed": false,
+      "hoursMentioned": false,
+      "workMentioned": false
+    },
+    "insurance": {
+      "confirmed": false,
+      "valueMentioned": false
+    },
+    "extras": {
+      "mentioned": false
+    },
+    "logistics": {
+      "mentioned": false
+    },
+    "providerPayment": {
+      "complete": false,
+      "currentIndex": 0
+    },
+    "currentStage": "items_principales"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "asistente-boms",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Asistente web para crear BOMs desde presupuestos de Zoho CRM.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check server.js && node --check public/app.js"
+  },
+  "dependencies": {
+    "pg": "^8.13.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

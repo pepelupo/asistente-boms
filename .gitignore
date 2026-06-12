@@ -1,0 +1,8 @@
+.env
+.zoho-token.json
+bom-datos-actuales.json
+usuarios.json
+server.out.log
+server.err.log
+node_modules/
+data/
