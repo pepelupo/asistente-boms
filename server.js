@@ -26,6 +26,10 @@ const ZOHO_SCOPES = process.env.ZOHO_SCOPES || "ZohoCRM.modules.ALL,ZohoCRM.sett
 const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-5.2";
 const CURRENT_USER = process.env.CURRENT_USER || "ignacio.vidalbruni";
 const ADMIN_USERS = splitList(process.env.ADMIN_USERS || "ignacio.vidalbruni,ignacio.vidalbruni@bessel.com.ar");
+const USER_MANAGER_USERS = splitList(
+  process.env.USER_MANAGER_USERS || "ignacio.vidalbruni,ignacio.vidalbruni@bessel.com.ar"
+);
+const ALLOWED_ROLES = ["admin", "gerente_comercial", "comercial"];
 
 const states = new Set();
 const sessions = new Map();
@@ -122,8 +126,11 @@ const server = http.createServer(async (req, res) => {
           username: currentUser.username,
           name: currentUser.name || "",
           email: currentUser.email || "",
-          role: currentUser.role || "comercial",
+          role: normalizeRole(currentUser.role),
+          roleLabel: roleLabel(currentUser.role),
           isAdmin: isAdminUser(currentUser),
+          canAccessConfig: canAccessConfig(currentUser),
+          canManageUsers: canManageUsers(currentUser),
         },
       });
     }
@@ -252,6 +259,32 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, buildAdminPromptResponse(currentUser));
     }
 
+    if (url.pathname === "/api/admin/users" && req.method === "GET") {
+      if (!canManageUsers(currentUser)) return sendError(res, 403, "Esta seccion es solo para el administrador principal.");
+      return sendJson(res, { users: users.map(publicUserForAdmin) });
+    }
+
+    if (url.pathname === "/api/admin/users" && req.method === "POST") {
+      if (!canManageUsers(currentUser)) return sendError(res, 403, "Esta seccion es solo para el administrador principal.");
+      const body = await readJsonBody(req);
+      const createdUser = await createManagedUser(body);
+      return sendJson(res, { user: publicUserForAdmin(createdUser), users: users.map(publicUserForAdmin) });
+    }
+
+    if (url.pathname === "/api/admin/users/reset-password" && req.method === "POST") {
+      if (!canManageUsers(currentUser)) return sendError(res, 403, "Esta seccion es solo para el administrador principal.");
+      const body = await readJsonBody(req);
+      const updatedUser = await resetManagedUserPassword(String(body.username || ""), String(body.password || ""));
+      return sendJson(res, { user: publicUserForAdmin(updatedUser), users: users.map(publicUserForAdmin) });
+    }
+
+    if (url.pathname === "/api/admin/users/delete" && req.method === "POST") {
+      if (!canManageUsers(currentUser)) return sendError(res, 403, "Esta seccion es solo para el administrador principal.");
+      const body = await readJsonBody(req);
+      await deleteManagedUser(String(body.username || ""), currentUser);
+      return sendJson(res, { users: users.map(publicUserForAdmin) });
+    }
+
     if (url.pathname === "/api/zoho/quote" && req.method === "POST") {
       const body = await readJsonBody(req);
       const quoteId = extractQuoteId(body.quoteUrl || body.quoteId || "");
@@ -282,7 +315,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (url.pathname === "/api/zoho/search" && req.method === "POST") {
-      if (!isAdminUser(currentUser)) return sendError(res, 403, "Esta accion es solo para administradores.");
+      if (!canAccessConfig(currentUser)) return sendError(res, 403, "Esta accion es solo para usuarios autorizados.");
       const body = await readJsonBody(req);
       const moduleName = String(body.module || "").trim();
       const query = String(body.query || "").trim();
@@ -305,7 +338,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (url.pathname === "/api/zoho/account" && req.method === "POST") {
-      if (!isAdminUser(currentUser)) return sendError(res, 403, "Esta accion es solo para administradores.");
+      if (!canAccessConfig(currentUser)) return sendError(res, 403, "Esta accion es solo para usuarios autorizados.");
       const body = await readJsonBody(req);
       const accountName = String(body.accountName || "").trim();
 
@@ -334,7 +367,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (url.pathname === "/api/zoho/contact" && req.method === "POST") {
-      if (!isAdminUser(currentUser)) return sendError(res, 403, "Esta accion es solo para administradores.");
+      if (!canAccessConfig(currentUser)) return sendError(res, 403, "Esta accion es solo para usuarios autorizados.");
       const body = await readJsonBody(req);
       const firstName = String(body.firstName || "").trim();
       const lastName = String(body.lastName || "").trim();
@@ -366,7 +399,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (url.pathname === "/api/zoho/quote/create" && req.method === "POST") {
-      if (!isAdminUser(currentUser)) return sendError(res, 403, "Esta accion es solo para administradores.");
+      if (!canAccessConfig(currentUser)) return sendError(res, 403, "Esta accion es solo para usuarios autorizados.");
       const body = await readJsonBody(req);
       const subject = String(body.subject || "").trim();
       const accountId = String(body.accountId || "").trim();
@@ -493,7 +526,7 @@ const server = http.createServer(async (req, res) => {
     return serveStatic(req, res, url.pathname);
   } catch (error) {
     console.error(error);
-    return sendError(res, 500, error.message || "Error inesperado.");
+    return sendError(res, error.statusCode || 500, error.message || "Error inesperado.");
   }
 });
 
@@ -645,6 +678,10 @@ async function saveUserToDatabase(user) {
       user.createdAt || null,
     ]
   );
+}
+
+async function deleteUserFromDatabase(username) {
+  await dbPool.query("DELETE FROM app_users WHERE username = $1", [username]);
 }
 
 async function loadAdminFilesFromDatabase() {
@@ -1445,6 +1482,10 @@ function loadUsers(filePath) {
   return initialUsers;
 }
 
+function saveUsersToFile(filePath) {
+  fs.writeFileSync(filePath, JSON.stringify({ users }, null, 2), "utf8");
+}
+
 function createInitialUsers() {
   const usersList = [createInitialAdminUser()];
   const commercialUsername = process.env.INITIAL_COMMERCIAL_USERNAME || "german.planes@bessel.com.ar";
@@ -1468,7 +1509,7 @@ function createInitialAdminUser() {
     password: process.env.INITIAL_ADMIN_PASSWORD || "Cambiar123!",
     name: process.env.INITIAL_ADMIN_NAME || "Juan Ignacio Vidal Bruni",
     email: process.env.INITIAL_ADMIN_EMAIL || "ignacio.vidalbruni@bessel.com.ar",
-    role: "administrador",
+    role: "admin",
   });
 }
 
@@ -1479,7 +1520,7 @@ function createUserRecord(input) {
     username: String(input.username || "").trim(),
     name: String(input.name || "").trim(),
     email: String(input.email || "").trim(),
-    role: String(input.role || "comercial").trim(),
+    role: normalizeRole(input.role),
     passwordSalt: salt,
     passwordIterations: iterations,
     passwordHash: hashPassword(input.password, salt, iterations),
@@ -1532,16 +1573,139 @@ function publicUser(user) {
     username: user.username,
     name: user.name || "",
     email: user.email || "",
-    role: user.role || "comercial",
+    role: normalizeRole(user.role),
+    roleLabel: roleLabel(user.role),
     isAdmin: isAdminUser(user),
+    canAccessConfig: canAccessConfig(user),
+    canManageUsers: canManageUsers(user),
   };
+}
+
+function publicUserForAdmin(user) {
+  return {
+    username: user.username,
+    name: user.name || "",
+    email: user.email || "",
+    role: normalizeRole(user.role),
+    roleLabel: roleLabel(user.role),
+    isAdmin: isAdminUser(user),
+    canAccessConfig: canAccessConfig(user),
+    canManageUsers: canManageUsers(user),
+    createdAt: user.createdAt || "",
+  };
+}
+
+async function createManagedUser(input) {
+  const username = String(input.username || "").trim();
+  const email = String(input.email || "").trim();
+  const password = String(input.password || "");
+  const role = normalizeRole(input.role);
+
+  if (!username) throw userInputError("Falta el usuario.");
+  if (!password || password.length < 6) throw userInputError("La contrasena debe tener al menos 6 caracteres.");
+  if (!ALLOWED_ROLES.includes(role)) throw userInputError("Rol no permitido.");
+
+  const exists = users.some((user) => sameText(user.username, username) || (email && sameText(user.email, email)));
+  if (exists) throw userInputError("Ya existe un usuario con ese usuario o email.");
+
+  const user = createUserRecord({
+    username,
+    password,
+    name: input.name || "",
+    email,
+    role,
+  });
+  users.push(user);
+  await persistUserChange(user);
+  return user;
+}
+
+async function resetManagedUserPassword(username, password) {
+  const user = findUserByUsername(username);
+  if (!user) throw userInputError("No encontre ese usuario.");
+  if (!password || password.length < 6) throw userInputError("La contrasena debe tener al menos 6 caracteres.");
+
+  const salt = crypto.randomBytes(16).toString("hex");
+  const iterations = 310000;
+  user.passwordSalt = salt;
+  user.passwordIterations = iterations;
+  user.passwordHash = hashPassword(password, salt, iterations);
+  await persistUserChange(user);
+  return user;
+}
+
+async function deleteManagedUser(username, currentUser) {
+  const user = findUserByUsername(username);
+  if (!user) throw userInputError("No encontre ese usuario.");
+  if (sameText(user.username, currentUser.username)) throw userInputError("No podes eliminar tu propio usuario.");
+
+  users = users.filter((item) => !sameText(item.username, user.username));
+  for (const [sessionId, session] of authSessions.entries()) {
+    if (sameText(session.username, user.username)) authSessions.delete(sessionId);
+  }
+
+  if (dbPool) {
+    await deleteUserFromDatabase(user.username);
+  } else {
+    saveUsersToFile(usersPath);
+  }
+}
+
+async function persistUserChange(user) {
+  if (dbPool) {
+    await saveUserToDatabase(user);
+  } else {
+    saveUsersToFile(usersPath);
+  }
+}
+
+function findUserByUsername(username) {
+  const normalized = String(username || "").trim().toLowerCase();
+  return users.find((user) => String(user.username || "").toLowerCase() === normalized);
+}
+
+function sameText(left, right) {
+  return String(left || "").trim().toLowerCase() === String(right || "").trim().toLowerCase();
+}
+
+function userInputError(message) {
+  const error = new Error(message);
+  error.statusCode = 400;
+  return error;
+}
+
+function normalizeRole(role) {
+  const normalized = String(role || "comercial").trim().toLowerCase().replace(/[\s-]+/g, "_");
+  if (normalized === "administrador") return "admin";
+  if (normalized === "gerente" || normalized === "gerente_comercial") return "gerente_comercial";
+  if (normalized === "operador") return "comercial";
+  return ALLOWED_ROLES.includes(normalized) ? normalized : "comercial";
+}
+
+function roleLabel(role) {
+  const normalized = normalizeRole(role);
+  if (normalized === "admin") return "Admin";
+  if (normalized === "gerente_comercial") return "Gerente comercial";
+  return "Comercial";
 }
 
 function isAdminUser(user) {
   if (!user) return false;
-  if (String(user.role || "").toLowerCase() === "administrador") return true;
+  if (normalizeRole(user.role) === "admin") return true;
   const identifiers = [user.username, user.email].map((item) => String(item || "").toLowerCase());
   return ADMIN_USERS.map((item) => item.toLowerCase()).some((item) => identifiers.includes(item));
+}
+
+function canAccessConfig(user) {
+  if (!user) return false;
+  const role = normalizeRole(user.role);
+  return role === "admin" || role === "gerente_comercial" || isAdminUser(user);
+}
+
+function canManageUsers(user) {
+  if (!user || !isAdminUser(user)) return false;
+  const identifiers = [user.username, user.email].map((item) => String(item || "").toLowerCase());
+  return USER_MANAGER_USERS.map((item) => item.toLowerCase()).some((item) => identifiers.includes(item));
 }
 
 function readCookie(req, name) {

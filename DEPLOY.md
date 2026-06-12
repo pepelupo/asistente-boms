@@ -55,6 +55,7 @@ INITIAL_COMMERCIAL_PASSWORD=123456
 INITIAL_COMMERCIAL_NAME=German Planes
 INITIAL_COMMERCIAL_EMAIL=german.planes@bessel.com.ar
 ADMIN_USERS=ignacio.vidalbruni@bessel.com.ar
+USER_MANAGER_USERS=ignacio.vidalbruni@bessel.com.ar
 
 TC_BILLETE_VENTA=
 TC_DIVISA_VENTA=
@@ -126,6 +127,16 @@ INITIAL_COMMERCIAL_EMAIL
 La contraseña se guarda hasheada, no como texto plano.
 
 Para el primer deploy, definir `INITIAL_ADMIN_PASSWORD` con una contraseña segura antes del primer arranque.
+
+Roles disponibles:
+
+```text
+admin
+gerente_comercial
+comercial
+```
+
+La seccion de administracion de usuarios solo queda disponible para los usuarios listados en `USER_MANAGER_USERS`.
 
 ## Limitacion importante del MVP
 
