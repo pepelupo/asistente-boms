@@ -19,6 +19,11 @@ const adminPromptView = document.getElementById("adminPromptView");
 const adminContextFile = document.getElementById("adminContextFile");
 const adminFileList = document.getElementById("adminFileList");
 const adminStatus = document.getElementById("adminStatus");
+const userAdminPanel = document.getElementById("userAdminPanel");
+const userCreateForm = document.getElementById("userCreateForm");
+const userList = document.getElementById("userList");
+const userAdminStatus = document.getElementById("userAdminStatus");
+const refreshUsersButton = document.getElementById("refreshUsersButton");
 const refreshPromptButton = document.getElementById("refreshPromptButton");
 const saveAdminPromptButton = document.getElementById("saveAdminPromptButton");
 const uploadAdminFileButton = document.getElementById("uploadAdminFileButton");
@@ -49,6 +54,7 @@ const createQuoteButton = document.getElementById("createQuoteButton");
 const createQuoteStatus = document.getElementById("createQuoteStatus");
 let currentUserIsAdmin = false;
 let currentUserCanAccessConfig = false;
+let currentUserCanManageUsers = false;
 const newQuoteSelection = {
   account: null,
   contact: null,
@@ -70,6 +76,8 @@ bomDataToggle.addEventListener("click", toggleBomDataPanel);
 refreshPromptButton.addEventListener("click", loadAdminPrompt);
 saveAdminPromptButton.addEventListener("click", saveAdminPrompt);
 uploadAdminFileButton.addEventListener("click", uploadAdminContextFile);
+refreshUsersButton.addEventListener("click", loadUsers);
+userCreateForm.addEventListener("submit", createUser);
 workViewButton.addEventListener("click", () => setActivePage("work"));
 configViewButton.addEventListener("click", () => setActivePage("config"));
 logoutButton.addEventListener("click", logout);
@@ -411,19 +419,18 @@ async function loadStatus() {
     addInfo("Modelo OpenAI", config.openai.model || "no definido");
     addInfo("Redirect URI", config.zoho.redirectUri);
     addInfo("Scopes Zoho", config.zoho.scopes);
-    if (config.currentUser && config.currentUser.isAdmin) {
-      currentUserIsAdmin = true;
-      currentUserCanAccessConfig = true;
-      configViewButton.classList.remove("hidden");
-      adminPanel.classList.remove("hidden");
-      addInfo("Usuario", `${config.currentUser.username} - administrador`);
-      await loadAdminPrompt();
-    } else if (config.currentUser) {
-      currentUserIsAdmin = false;
-      currentUserCanAccessConfig = false;
-      configViewButton.classList.add("hidden");
-      setActivePage("work");
-      addInfo("Usuario", `${config.currentUser.username} - comercial`);
+    if (config.currentUser) {
+      currentUserIsAdmin = Boolean(config.currentUser.isAdmin);
+      currentUserCanAccessConfig = Boolean(config.currentUser.canAccessConfig);
+      currentUserCanManageUsers = Boolean(config.currentUser.canManageUsers);
+      configViewButton.classList.toggle("hidden", !currentUserCanAccessConfig);
+      adminPanel.classList.toggle("hidden", !currentUserIsAdmin);
+      userAdminPanel.classList.toggle("hidden", !currentUserCanManageUsers);
+      addInfo("Usuario", `${config.currentUser.username} - ${config.currentUser.roleLabel || config.currentUser.role || "comercial"}`);
+
+      if (currentUserIsAdmin) await loadAdminPrompt();
+      if (currentUserCanManageUsers) await loadUsers();
+      if (!currentUserCanAccessConfig) setActivePage("work");
     }
   } catch (error) {
     statusEl.innerHTML = `<p class="muted">No pude leer el estado del servidor.</p>`;
@@ -722,6 +729,136 @@ async function loadAdminPrompt() {
     adminStatus.textContent = "Prompt actualizado.";
   } catch (error) {
     adminStatus.textContent = error.message;
+  }
+}
+
+async function loadUsers() {
+  if (!currentUserCanManageUsers) return;
+  userAdminStatus.textContent = "Leyendo usuarios...";
+
+  try {
+    const response = await fetch("/api/admin/users");
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "No pude leer usuarios.");
+
+    renderUsers(data.users || []);
+    userAdminStatus.textContent = "Usuarios actualizados.";
+  } catch (error) {
+    userAdminStatus.textContent = error.message;
+  }
+}
+
+async function createUser(event) {
+  event.preventDefault();
+  if (!currentUserCanManageUsers) return;
+
+  const form = new FormData(userCreateForm);
+  const payload = {
+    name: form.get("name"),
+    email: form.get("email"),
+    username: form.get("username"),
+    password: form.get("password"),
+    role: form.get("role"),
+  };
+
+  userAdminStatus.textContent = "Creando usuario...";
+
+  try {
+    const response = await fetch("/api/admin/users", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "No pude crear el usuario.");
+
+    userCreateForm.reset();
+    renderUsers(data.users || []);
+    userAdminStatus.textContent = "Usuario creado.";
+  } catch (error) {
+    userAdminStatus.textContent = error.message;
+  }
+}
+
+function renderUsers(users) {
+  if (!users.length) {
+    userList.innerHTML = `<p class="muted small">Todavia no hay usuarios.</p>`;
+    return;
+  }
+
+  userList.innerHTML = users
+    .map(
+      (user) => `<section class="user-row">
+        <div>
+          <strong>${escapeHtml(user.name || user.username)}</strong>
+          <span>${escapeHtml(user.email || user.username)}</span>
+        </div>
+        <div>
+          <span class="role-pill">${escapeHtml(user.roleLabel || user.role)}</span>
+        </div>
+        <div class="user-actions">
+          <button class="button compact secondary" type="button" data-reset-user="${escapeHtml(user.username)}">Resetear contraseña</button>
+          <button class="button compact danger" type="button" data-delete-user="${escapeHtml(user.username)}">Eliminar</button>
+        </div>
+      </section>`
+    )
+    .join("");
+
+  for (const button of userList.querySelectorAll("[data-reset-user]")) {
+    button.addEventListener("click", () => resetUserPassword(button.dataset.resetUser));
+  }
+
+  for (const button of userList.querySelectorAll("[data-delete-user]")) {
+    button.addEventListener("click", () => deleteUser(button.dataset.deleteUser));
+  }
+}
+
+async function resetUserPassword(username) {
+  const password = window.prompt(`Nueva contraseña para ${username}`);
+  if (!password) return;
+
+  userAdminStatus.textContent = "Reseteando contraseña...";
+
+  try {
+    const response = await fetch("/api/admin/users/reset-password", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ username, password }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "No pude resetear la contraseña.");
+
+    renderUsers(data.users || []);
+    userAdminStatus.textContent = "Contraseña reseteada.";
+  } catch (error) {
+    userAdminStatus.textContent = error.message;
+  }
+}
+
+async function deleteUser(username) {
+  if (!window.confirm(`Eliminar el usuario ${username}?`)) return;
+
+  userAdminStatus.textContent = "Eliminando usuario...";
+
+  try {
+    const response = await fetch("/api/admin/users/delete", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ username }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "No pude eliminar el usuario.");
+
+    renderUsers(data.users || []);
+    userAdminStatus.textContent = "Usuario eliminado.";
+  } catch (error) {
+    userAdminStatus.textContent = error.message;
   }
 }
 

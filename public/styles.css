@@ -459,6 +459,67 @@ textarea {
   margin-bottom: 16px;
 }
 
+.user-admin-panel {
+  margin-bottom: 16px;
+}
+
+.user-form {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.user-list {
+  display: grid;
+  gap: 8px;
+}
+
+.user-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 10px 12px;
+  background: #fbfcfd;
+}
+
+.user-row div:first-child {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.user-row strong,
+.user-row span {
+  overflow-wrap: anywhere;
+}
+
+.user-row span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.role-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  border-radius: 999px;
+  padding: 4px 10px;
+  background: #e9f1ef;
+  color: var(--accent);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.user-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
 .admin-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -598,6 +659,19 @@ textarea {
 
   .inline-action {
     grid-template-columns: 1fr;
+  }
+
+  .user-row {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+  }
+
+  .user-actions {
+    justify-content: stretch;
+  }
+
+  .user-actions .button {
+    width: 100%;
   }
 
   .section-header {

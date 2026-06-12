@@ -171,6 +171,46 @@
         </article>
       </section>
 
+      <section class="panel user-admin-panel hidden" id="userAdminPanel">
+        <div class="section-header">
+          <h2>Usuarios</h2>
+          <button class="button compact secondary" id="refreshUsersButton" type="button">Actualizar</button>
+        </div>
+
+        <form id="userCreateForm" class="user-form">
+          <div class="form-grid">
+            <div>
+              <label for="newUserName">Nombre</label>
+              <input id="newUserName" name="name" type="text" placeholder="Nombre y apellido" />
+            </div>
+            <div>
+              <label for="newUserEmail">Email</label>
+              <input id="newUserEmail" name="email" type="email" placeholder="usuario@bessel.com.ar" />
+            </div>
+          </div>
+          <div class="form-grid">
+            <div>
+              <label for="newUserUsername">Usuario</label>
+              <input id="newUserUsername" name="username" type="text" placeholder="usuario@bessel.com.ar" />
+            </div>
+            <div>
+              <label for="newUserPassword">Contraseña inicial</label>
+              <input id="newUserPassword" name="password" type="password" autocomplete="new-password" />
+            </div>
+          </div>
+          <label for="newUserRole">Tipo de usuario</label>
+          <select id="newUserRole" name="role">
+            <option value="comercial">Comercial</option>
+            <option value="gerente_comercial">Gerente comercial</option>
+            <option value="admin">Admin</option>
+          </select>
+          <button class="button" id="createUserButton" type="submit">Crear usuario</button>
+          <p class="muted small" id="userAdminStatus">Solo visible para el administrador principal.</p>
+        </form>
+
+        <div class="user-list" id="userList"></div>
+      </section>
+
       <section class="panel quote-create-panel">
         <h2>Crear presupuesto</h2>
         <label for="newQuoteSubject">Asunto del presupuesto</label>
